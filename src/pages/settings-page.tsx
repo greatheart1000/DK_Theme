@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BellRing, KeyRound, RefreshCcw, ShieldCheck } from 'lucide-react'
+import { BellRing, CreditCard, KeyRound, RefreshCcw, ShieldCheck, ExternalLink, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
@@ -19,8 +19,10 @@ import {
   resetSubscribeSecurity,
   updateReminderSettings,
 } from '@/lib/api/services/settings'
+import { getSubscription, createPortalSession, cancelSubscription } from '@/lib/api/services/stripe'
 import { getUserInfo } from '@/lib/api/services/user'
 import type { UserInfo } from '@/lib/api/types'
+import type { StripeSubscription } from '@/lib/api/services/stripe'
 
 type PasswordForm = {
   old_password: string
@@ -94,6 +96,24 @@ export function SettingsPage() {
     setRemindExpire(user.remind_expire !== 0)
     setRemindTraffic(user.remind_traffic !== 0)
   }, [userQuery.data])
+
+  // Stripe subscription
+  const stripeQuery = useQuery<StripeSubscription>({ queryKey: ['stripe-subscription'], queryFn: getSubscription })
+  const portalMutation = useMutation({
+    mutationFn: createPortalSession,
+    onSuccess: (data) => {
+      if (data?.url) window.open(data.url, '_blank')
+    },
+    onError: (error) => toast.error(getErrorMessage(error, '打开账单管理中心失败')),
+  })
+  const cancelSubMutation = useMutation({
+    mutationFn: cancelSubscription,
+    onSuccess: () => {
+      toast.success('订阅已取消')
+      queryClient.invalidateQueries({ queryKey: ['stripe-subscription'] })
+    },
+    onError: (error) => toast.error(getErrorMessage(error, '取消订阅失败')),
+  })
 
   const passwordMutation = useMutation({
     mutationFn: changePassword,
@@ -290,6 +310,57 @@ export function SettingsPage() {
             </CardContent>
           </Card>
 
+          <Card className='flex h-full flex-col border-slate-200/90 bg-white/96 shadow-lg shadow-slate-200/60 dark:border-border/70 dark:bg-card dark:shadow-none'>
+            <SettingCardHeader
+              icon={<CreditCard className='size-5' />}
+              badge='订阅管理'
+              title='Stripe 订阅管理'
+              description='查看当前订阅状态、管理支付方式、取消订阅。'
+            />
+            <CardContent className='flex flex-1 flex-col space-y-4 pt-0'>
+              {stripeQuery.isLoading ? (
+                <div className='rounded-3xl border border-slate-200/80 bg-slate-50/85 p-5 text-sm text-slate-500 dark:border-border/70 dark:bg-background/35'>加载中...</div>
+              ) : stripeQuery.data?.stripe ? (
+                <>
+                  <div className='rounded-3xl border border-slate-200/80 bg-slate-50/85 p-5 space-y-3 dark:border-border/70 dark:bg-background/35'>
+                    <div className='flex justify-between'>
+                      <span className='text-sm text-slate-500 dark:text-muted-foreground'>状态</span>
+                      <Badge variant={stripeQuery.data.stripe.status === 'active' ? 'default' : 'destructive'}>
+                        {stripeQuery.data.stripe.status === 'active' ? '活跃' : stripeQuery.data.stripe.status === 'past_due' ? '逾期' : stripeQuery.data.stripe.status === 'canceled' ? '已取消' : stripeQuery.data.stripe.status}
+                      </Badge>
+                    </div>
+                    <div className='flex justify-between'>
+                      <span className='text-sm text-slate-500 dark:text-muted-foreground'>下期扣款日</span>
+                      <span className='text-sm font-medium'>{new Date(stripeQuery.data.stripe.current_period_end * 1000).toLocaleDateString()}</span>
+                    </div>
+                    {stripeQuery.data.stripe.cancel_at_period_end && (
+                      <div className='rounded-2xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200'>
+                        订阅将在当前周期结束后取消。
+                      </div>
+                    )}
+                  </div>
+                  <div className='flex flex-col gap-3 sm:flex-row'>
+                    <Button className='w-full rounded-full sm:w-auto' onClick={() => portalMutation.mutate()} disabled={portalMutation.isPending}>
+                      <ExternalLink className='mr-2 size-4' />
+                      管理订阅
+                    </Button>
+                    {!stripeQuery.data.stripe.cancel_at_period_end && (
+                      <Button variant='outline' className='w-full rounded-full sm:w-auto' onClick={() => cancelSubMutation.mutate()} disabled={cancelSubMutation.isPending}>
+                        <XCircle className='mr-2 size-4' />
+                        取消订阅
+                      </Button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className='rounded-3xl border border-slate-200/80 bg-slate-50/85 p-5 text-sm text-slate-500 dark:border-border/70 dark:bg-background/35'>
+                    暂无 Stripe 订阅记录。如已通过其他方式订阅，再购买套餐即可自动关联。
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
           <Card className='flex h-full flex-col border-rose-200/80 bg-white/96 shadow-lg shadow-slate-200/60 dark:border-rose-500/30 dark:bg-card dark:shadow-none'>
             <SettingCardHeader
               icon={<RefreshCcw className='size-5' />}
