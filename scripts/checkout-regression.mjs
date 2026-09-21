@@ -1,0 +1,25 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+import ts from 'typescript';
+const code=ts.transpileModule(fs.readFileSync('src/lib/api/services/orders.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+let payload;
+const exports={};
+vm.runInNewContext(code,{exports,URL,require:(name)=>{
+if(name.includes('/client'))return {apiClient:{post:async()=>({data:payload})}};
+if(name.includes('/config'))return {appConfig:{enableMock:false}};
+if(name.includes('/mock'))return {};
+throw Error(name);
+}});
+payload={type:-1,data:true};
+assert.equal((await exports.checkoutOrder({trade_no:'test',method:1})).type,'completed');
+payload={type:1,data:'https://checkout.stripe.com/c/pay/test'};
+const redirect=await exports.checkoutOrder({trade_no:'test',method:1});
+assert.equal(redirect.type,'redirect'); assert.equal(redirect.url,payload.data);
+payload={type:1,data:''};
+await assert.rejects(()=>exports.checkoutOrder({trade_no:'test',method:1}));
+payload={type:1,data:'javascript:alert(1)'};
+await assert.rejects(()=>exports.checkoutOrder({trade_no:'test',method:1}));
+payload={type:-1,data:false};
+await assert.rejects(()=>exports.checkoutOrder({trade_no:'test',method:1}));
+console.log('5 checkout regression cases passed');

@@ -146,7 +146,6 @@ export type InviteStat = {
 };
 
 export type NodeStatus = {
-  demo?: boolean;
   id: number | string;
   name: string;
   location?: string | null;

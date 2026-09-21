@@ -12,11 +12,7 @@ export type CheckoutOrderPayload = {
   method: number;
 };
 
-export type CheckoutOrderResponse = string | {
-  type?: number;
-  data?: string;
-  url?: string;
-}
+export type CheckoutResult = { type: 'completed' } | { type: 'redirect'; url: string }
 
 export type CreateOrderPayload = {
   period: string;
@@ -24,13 +20,15 @@ export type CreateOrderPayload = {
   coupon_code?: string;
 }
 
-function normalizeCheckoutUrl(payload: CheckoutOrderResponse) {
-  if (typeof payload === 'string') return payload
-  if (payload && typeof payload === 'object') {
-    if (typeof payload.data === 'string') return payload.data
-    if (typeof payload.url === 'string') return payload.url
+function normalizeCheckoutResult(payload: unknown): CheckoutResult {
+  if (!payload || typeof payload !== 'object') throw new Error('支付响应格式异常，请稍后重试')
+  const result = payload as { type?: number; data?: unknown }
+  if (result.type === -1 && result.data === true) return { type: 'completed' }
+  if (result.type === 1 && typeof result.data === 'string' && result.data.trim()) {
+    const url = new URL(result.data)
+    if (url.protocol === 'https:' || url.protocol === 'http:') return { type: 'redirect', url: url.href }
   }
-  return ''
+  throw new Error('支付渠道未返回有效的支付链接，请联系管理员检查配置')
 }
 
 export async function getOrders() {
@@ -65,10 +63,10 @@ export async function cancelOrder(payload: CancelOrderPayload) {
 
 export async function checkoutOrder(payload: CheckoutOrderPayload) {
   if (appConfig.enableMock) {
-    return 'https://example.com/mock-checkout';
+    return { type: 'redirect', url: 'https://example.com/mock-checkout' } as const;
   }
-  const response = await apiClient.post<ApiEnvelope<CheckoutOrderResponse>>('/api/v1/user/order/checkout', payload);
-  return normalizeCheckoutUrl(response.data.data);
+  const response = await apiClient.post<unknown>('/api/v1/user/order/checkout', payload);
+  return normalizeCheckoutResult(response.data);
 }
 
 export async function createOrder(payload: CreateOrderPayload) {

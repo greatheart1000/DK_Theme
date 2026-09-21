@@ -26,7 +26,7 @@ function normalizeNodeStatus(item: RawNodeStatus, index: number): NodeStatus {
     toStringValue(item.host) ??
     `节点 ${index + 1}`
 
-  const statusValue = item.is_online ?? item.online ?? item.available ?? item.status
+  const statusValue = item.online ?? item.is_online ?? item.available ?? item.status
   const online = typeof statusValue === 'boolean'
     ? statusValue
     : typeof statusValue === 'number'
@@ -51,11 +51,10 @@ function normalizeNodeStatus(item: RawNodeStatus, index: number): NodeStatus {
     toNumber(item.packet_loss)
 
   const lastChecked =
-    toNumber(item.last_check_at) ??
     toNumber(item.last_checked) ??
     toNumber(item.lastCheckAt) ??
     toNumber(item.updated_at) ??
-    null
+    Math.floor(Date.now() / 1000)
 
   const tags = Array.isArray(item.tags)
     ? item.tags.map((entry) => toStringValue(entry)).filter(Boolean) as string[]
@@ -82,15 +81,5 @@ export async function getNodeStatuses() {
   if (appConfig.enableMock) return mockNodeStatuses
   const response = await apiClient.get<ApiEnvelope<RawNodeStatus[]>>(appConfig.nodeStatus.apiPath)
   const data = Array.isArray(response.data.data) ? response.data.data : []
-  return [
-    ...data.map((item, index) => normalizeNodeStatus(item, index)),
-    ...mockNodeStatuses.map((node) => ({
-      ...node,
-      id: `demo-${node.id}`,
-      demo: true,
-      online: false,
-      last_checked: null,
-      remarks: '演示节点，待购买 VPS 后部署，暂不可连接。',
-    })),
-  ]
+  return data.map((item, index) => normalizeNodeStatus(item, index))
 }

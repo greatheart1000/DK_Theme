@@ -19,7 +19,7 @@ import { appConfig } from '@/lib/config'
 import { getFlagAsset, getRegionBadgeFromText, type FlagCode, type RegionBadge } from '@/lib/flags'
 import { formatDateTime } from '@/lib/format'
 
-type NodeFilter = 'all' | 'online' | 'offline' | 'demo' | 'tagged'
+type NodeFilter = 'all' | 'online' | 'offline' | 'tagged'
 type NodeSort = 'status' | 'name' | 'rate' | 'checked'
 type NodeViewMode = 'card' | 'list'
 
@@ -27,7 +27,6 @@ const filterOptions: Array<{ key: NodeFilter; label: string }> = [
   { key: 'all', label: '全部节点' },
   { key: 'online', label: '仅看可用' },
   { key: 'offline', label: '仅看异常' },
-  { key: 'demo', label: '演示／待部署' },
   { key: 'tagged', label: '仅看有标签' },
 ]
 
@@ -148,11 +147,10 @@ function formatRelativeCheckTime(timestamp?: number | null) {
 }
 
 function getNodeStatusLabel(node: NodeStatus) {
-  return node.demo ? '待部署' : node.online ? '在线' : '异常'
+  return node.online ? '在线' : '异常'
 }
 
 function getNodeStatusSummary(node: NodeStatus) {
-  if (node.demo) return '演示节点，待购买 VPS 后部署，暂不可连接。'
   return node.online ? '节点可用，可正常分配到订阅。' : '节点当前异常，建议暂时切换其他节点。'
 }
 
@@ -166,9 +164,7 @@ function matchesFilter(node: NodeStatus, filter: NodeFilter) {
     case 'online':
       return node.online
     case 'offline':
-      return !node.demo && !node.online
-    case 'demo':
-      return Boolean(node.demo)
+      return !node.online
     case 'tagged':
       return Boolean(node.tags?.length)
     default:
@@ -221,14 +217,14 @@ export function NodeStatusPage() {
   )
 
   const onlineCount = nodes.filter((node) => node.online).length
-  const offlineCount = nodes.filter((node) => !node.demo && !node.online).length
-  const demoCount = nodes.filter((node) => node.demo).length
+  const offlineCount = nodes.filter((node) => !node.online).length
+  const taggedCount = nodes.filter((node) => node.tags?.length).length
 
   return (
     <div className='space-y-8'>
       <PageHeader
         badge='节点状态'
-        title='订阅节点与待部署线路'
+        title='当前订阅节点真实状态'
         actions={<Badge variant='outline' className='rounded-full border-slate-200/80 bg-white/80 dark:border-border/70 dark:bg-background/35'>每 {Math.round(appConfig.nodeStatus.refreshIntervalMs / 1000)} 秒自动刷新</Badge>}
       />
 
@@ -248,8 +244,8 @@ export function NodeStatusPage() {
               <div className='mt-3 text-2xl font-semibold text-rose-600 dark:text-rose-400'>{offlineCount}</div>
             </div>
             <div className='rounded-3xl border border-slate-200/80 bg-slate-50/85 p-5 dark:border-border/70 dark:bg-background/35'>
-              <div className='flex items-center gap-2 text-sm text-slate-500 dark:text-muted-foreground'><Tags className='size-4' />演示／待部署</div>
-              <div className='mt-3 text-2xl font-semibold text-slate-900 dark:text-foreground'>{demoCount}</div>
+              <div className='flex items-center gap-2 text-sm text-slate-500 dark:text-muted-foreground'><Tags className='size-4' />有标签节点</div>
+              <div className='mt-3 text-2xl font-semibold text-slate-900 dark:text-foreground'>{taggedCount}</div>
             </div>
           </CardContent>
         </Card>
@@ -262,7 +258,7 @@ export function NodeStatusPage() {
               <div className='flex flex-wrap items-start justify-between gap-3'>
                 <div>
                   <CardTitle>节点列表</CardTitle>
-                  <CardDescription>包含真实订阅节点和 19 个演示节点；演示节点尚未部署，不会加入订阅。</CardDescription>
+                  <CardDescription>支持按真实字段进行搜索、筛选、排序，并可切换列表式与卡片式查看。</CardDescription>
                 </div>
                 <div className='grid w-full gap-2 sm:w-auto sm:grid-cols-[auto_auto] sm:items-center sm:justify-end'>
                   <div className='inline-grid min-w-0 grid-cols-2 items-center gap-1 rounded-2xl border border-slate-200 bg-white/90 p-1 sm:min-w-[190px] dark:border-border/70 dark:bg-transparent'>
@@ -351,14 +347,14 @@ export function NodeStatusPage() {
                           key={String(node.id)}
                           className={[
                             'relative flex h-full min-h-[198px] flex-col rounded-2xl border bg-slate-50/80 p-3.5 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md dark:bg-background/35',
-                            node.demo ? 'border-amber-200 dark:border-amber-500/30' : node.online
+                            node.online
                               ? 'border-emerald-200/90 hover:border-emerald-300 dark:border-emerald-500/30 dark:hover:border-emerald-400/50'
                               : 'border-rose-200/90 hover:border-rose-300 dark:border-rose-500/30 dark:hover:border-rose-400/50',
                           ].join(' ')}
                         >
                           <div className='absolute right-4 top-4'>
                             <Badge
-                              variant={node.demo ? 'warning' : node.online ? 'success' : 'destructive'}
+                              variant={node.online ? 'success' : 'destructive'}
                               className={[
                                 'shadow-sm',
                                 node.online
@@ -395,7 +391,7 @@ export function NodeStatusPage() {
 
                           <div className={[
                             'mt-3 rounded-xl border bg-white/80 px-3 py-2 text-[11px] text-muted-foreground dark:bg-background/60',
-                            node.demo ? 'border-amber-200 dark:border-amber-500/30' : node.online
+                            node.online
                               ? 'border-emerald-100/90 dark:border-emerald-500/20'
                               : 'border-rose-100/90 dark:border-rose-500/20',
                           ].join(' ')}>
@@ -434,7 +430,7 @@ export function NodeStatusPage() {
                               {regionBadge ? <RegionFlag code={regionBadge.code} label={regionBadge.label} className='h-[36px] w-[48px]' /> : null}
                               <div className='break-words text-lg font-semibold text-slate-900 dark:text-foreground'>{formatNodeDisplayName(node.name)}</div>
                               {regionBadge ? <Badge variant='secondary'>{regionBadge.label}</Badge> : null}
-                              <Badge variant={node.demo ? 'warning' : node.online ? 'success' : 'destructive'}>{getNodeStatusLabel(node)}</Badge>
+                              <Badge variant={node.online ? 'success' : 'destructive'}>{getNodeStatusLabel(node)}</Badge>
                               <Badge variant='outline'>倍率 {formatRate(node.rate)}</Badge>
                             </div>
 

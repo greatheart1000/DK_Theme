@@ -15,6 +15,8 @@ const ForgotPasswordPage = lazy(() => import('@/pages/forgot-password-page').the
 const RegisterPage = lazy(() => import('@/pages/register-page').then((module) => ({ default: module.RegisterPage })));
 const PlansPage = lazy(() => import('@/pages/plans-page').then((module) => ({ default: module.PlansPage })));
 const SettingsPage = lazy(() => import('@/pages/settings-page').then((module) => ({ default: module.SettingsPage })));
+const RefundsPage = lazy(() => import('@/pages/refunds-page').then((module) => ({ default: module.RefundsPage })));
+const InvoicesPage = lazy(() => import('@/pages/invoices-page').then((module) => ({ default: module.InvoicesPage })));
 const TicketsPage = lazy(() => import('@/pages/tickets-page').then((module) => ({ default: module.TicketsPage })));
 
 function ProtectedLayout() {
@@ -48,6 +50,8 @@ export function AppRouter() {
         <Route path='/tickets' element={<TicketsPage />} />
         <Route path='/knowledge' element={<KnowledgePage />} />
         <Route path='/settings' element={<SettingsPage />} />
+        <Route path='/invoices' element={<InvoicesPage />} />
+        <Route path='/refunds' element={<RefundsPage />} />
       </Route>
       <Route path='*' element={<Navigate to={token ? '/dashboard' : '/login'} replace />} />
     </Routes>

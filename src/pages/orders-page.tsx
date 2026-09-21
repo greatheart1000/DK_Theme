@@ -209,16 +209,18 @@ export function OrdersPage() {
 
   const checkoutOrderMutation = useMutation({
     mutationFn: checkoutOrder,
-    onSuccess: (checkoutUrl, variables) => {
+    onSuccess: (result, variables) => {
       setPaymentDialogOpen(false)
       void queryClient.invalidateQueries({ queryKey: ['orders'] })
       void queryClient.invalidateQueries({ queryKey: ['order-detail', variables.trade_no] })
-      if (checkoutUrl) {
+      if (result.type === 'redirect') {
         toast.success('正在跳转支付')
-        window.location.assign(checkoutUrl)
+        window.location.assign(result.url)
         return
       }
-      toast.error('支付接口未返回跳转链接，请稍后重试')
+      toast.success('支付已完成，订单正在开通')
+      void queryClient.invalidateQueries({ queryKey: ['user'] })
+      void queryClient.invalidateQueries({ queryKey: ['subscribe'] })
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, '发起支付失败，请稍后重试'))
@@ -329,21 +331,22 @@ export function OrdersPage() {
               ) : filteredOrders.map((order) => {
                 const status = getStatusMeta(order.status)
                 const active = order.trade_no === selectedTradeNo
-                const highlighted = order.trade_no === highlightedTradeNo
                 return (
                   <button
                     key={order.trade_no}
                     type='button'
+                    aria-pressed={active}
                     onClick={() => setSelectedTradeNo(order.trade_no)}
                     className={active
-                      ? `w-full rounded-3xl border p-5 text-left shadow-sm transition ${highlighted ? 'border-sky-400 bg-sky-50/70 dark:border-sky-400/50 dark:bg-sky-500/10' : 'border-primary/35 bg-primary/5 dark:bg-primary/10'}`
-                      : `w-full rounded-3xl border p-5 text-left transition hover:border-primary/30 hover:bg-white dark:border-border/70 dark:bg-background/35 dark:hover:bg-background/50 ${highlighted ? 'border-sky-300 bg-sky-50/60 dark:border-sky-500/30 dark:bg-sky-500/5' : 'border-slate-200/80 bg-slate-50/85'}`}
+                      ? 'w-full rounded-3xl border-2 border-primary bg-primary/5 p-5 text-left shadow-sm transition dark:bg-primary/10'
+                      : 'w-full rounded-3xl border border-slate-200/80 bg-slate-50/85 p-5 text-left transition hover:bg-white dark:border-border/70 dark:bg-background/35 dark:hover:bg-background/50'}
                   >
                     <div className='flex flex-col gap-3 md:flex-row md:items-center md:justify-between'>
                       <div className='min-w-0 space-y-2'>
                         <div className='flex flex-wrap items-center gap-2'>
                           <div className='break-all font-semibold text-slate-900 dark:text-foreground'>{order.trade_no}</div>
                           <Badge variant={status.variant}>{status.label}</Badge>
+                          {active && <Badge>已选中</Badge>}
                         </div>
                         <div className='break-words text-sm text-slate-900 dark:text-foreground'>{order.plan.name} · {getPeriodLabel(order.period)}</div>
                         <div className='text-sm text-slate-500 dark:text-muted-foreground'>创建时间：{formatDateTime(order.created_at)}</div>
