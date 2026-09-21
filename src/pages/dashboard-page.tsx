@@ -1,3 +1,4 @@
+import { AdminRevenueCards } from '@/components/admin-revenue-cards'
 import { Suspense, lazy } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/ui/badge'
@@ -86,6 +87,7 @@ export function DashboardPage() {
 
   return (
     <>
+      {user?.is_admin && <AdminRevenueCards />}
       <div className='px-4 lg:px-6'>
         <Card className='overflow-hidden border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(244,247,252,0.92))] shadow-sm dark:border-border/70 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.96),rgba(15,23,42,0.92))]'>
           <CardContent className='grid gap-6 p-5 lg:grid-cols-[1.12fr_0.88fr] lg:items-stretch lg:p-6'>

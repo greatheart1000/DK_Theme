@@ -9,6 +9,7 @@ export type AuthPayload = {
 };
 
 export type UserInfo = {
+  is_admin?: boolean;
   email: string;
   balance: number;
   commission_balance?: number;

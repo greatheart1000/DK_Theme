@@ -47,11 +47,11 @@ export function AdminRefundsPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [adminNote, setAdminNote] = useState('')
 
-  const { data: refunds, isLoading } = useQuery<RefundItem[]>({
+  const { data: refunds, isLoading, error } = useQuery<RefundItem[]>({
     queryKey: ['admin-refunds', filter],
     queryFn: async () => {
       const params = filter !== null ? `?status=${filter}` : ''
-      const res = await apiClient.get<ApiEnvelope<RefundItem[]>>(`/api/v2/admin/refund/fetch${params}`)
+      const res = await apiClient.get<ApiEnvelope<RefundItem[]>>(`/api/v2/user/admin/refund/fetch${params}`)
       // Handle paginated response
       const data = res.data.data as any
       if (data?.data) return data.data as RefundItem[]
@@ -63,7 +63,7 @@ export function AdminRefundsPage() {
   const approveMutation = useMutation({
     mutationFn: async () => {
       if (!selectedId) throw new Error('No refund selected')
-      await apiClient.post('/api/v2/admin/refund/approve', { id: selectedId, admin_note: adminNote || undefined })
+      await apiClient.post('/api/v2/user/admin/refund/approve', { id: selectedId, admin_note: adminNote || undefined })
     },
     onSuccess: () => {
       toast.success('退款已批准')
@@ -78,7 +78,7 @@ export function AdminRefundsPage() {
   const rejectMutation = useMutation({
     mutationFn: async () => {
       if (!selectedId) throw new Error('No refund selected')
-      await apiClient.post('/api/v2/admin/refund/reject', { id: selectedId, admin_note: adminNote || '管理员拒绝' })
+      await apiClient.post('/api/v2/user/admin/refund/reject', { id: selectedId, admin_note: adminNote || '管理员拒绝' })
     },
     onSuccess: () => {
       toast.success('退款已拒绝')
@@ -113,7 +113,7 @@ export function AdminRefundsPage() {
           <CardContent className='p-6'>
             {isLoading ? (
               <div className='rounded-3xl border p-8 text-center text-sm text-slate-500'>加载中...</div>
-            ) : !refunds?.length ? (
+            ) : error ? (<div role='alert'>退款列表加载失败，请刷新重试。</div>) : !refunds?.length ? (
               <div className='rounded-3xl border border-dashed p-8 text-center text-sm text-slate-500'>暂无退款记录</div>
             ) : (
               <div className='overflow-x-auto'>
@@ -145,10 +145,10 @@ export function AdminRefundsPage() {
                         <td className='py-3 text-right'>
                           {r.status === 0 && (
                             <div className='flex gap-1 justify-end'>
-                              <Button size='sm' variant='ghost' className='text-green-600' onClick={() => { setSelectedId(r.id); setDialogAction('approve'); }}>
+                              <Button size='sm' variant='ghost' aria-label='批准退款' className='text-green-600' onClick={() => { setSelectedId(r.id); setDialogAction('approve'); }}>
                                 <CheckCircle className='size-4' />
                               </Button>
-                              <Button size='sm' variant='ghost' className='text-red-600' onClick={() => { setSelectedId(r.id); setDialogAction('reject'); setAdminNote(''); }}>
+                              <Button size='sm' variant='ghost' aria-label='拒绝退款' className='text-red-600' onClick={() => { setSelectedId(r.id); setDialogAction('reject'); setAdminNote(''); }}>
                                 <XCircle className='size-4' />
                               </Button>
                             </div>

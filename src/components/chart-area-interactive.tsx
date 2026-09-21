@@ -1,3 +1,4 @@
+import { localDateKey } from '@/lib/local-date'
 import * as React from 'react'
 import { Activity, ArrowDownToLine, ArrowUpToLine, Database } from 'lucide-react'
 
@@ -37,7 +38,7 @@ type DailyTrafficPoint = {
 }
 
 function getDayKey(timestamp: number) {
-  return new Date(timestamp * 1000).toISOString().slice(0, 10)
+  return localDateKey(new Date(timestamp * 1000))
 }
 
 function buildDailyTraffic(logs: TrafficLog[]) {
@@ -61,14 +62,14 @@ function formatTrafficCompact(value: number) {
 }
 
 function formatLongDate(value: string) {
-  return new Date(value).toLocaleDateString('zh-CN', {
+  return new Date(value + "T00:00:00").toLocaleDateString('zh-CN', {
     month: 'long',
     day: 'numeric',
   })
 }
 
 function formatAxisDate(value: string, compact = false) {
-  const date = new Date(value)
+  const date = new Date(value + "T00:00:00")
   return date.toLocaleDateString('zh-CN', compact ? {
     month: 'numeric',
     day: 'numeric',

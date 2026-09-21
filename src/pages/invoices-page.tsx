@@ -1,3 +1,5 @@
+import { apiClient } from '@/lib/api/client'
+import { toast } from 'sonner'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Download, SearchIcon } from 'lucide-react'
@@ -112,7 +114,7 @@ export function InvoicesPage() {
                           <td className='py-3 text-slate-900 dark:text-foreground'>{inv.invoice_no}</td>
                           <td className='py-3 text-slate-600 dark:text-muted-foreground'>{inv.order?.plan?.name ?? '--'}</td>
                           <td className='py-3 text-right font-medium text-slate-900 dark:text-foreground'>
-                            ${(inv.amount / 100).toFixed(2)}
+                            {new Intl.NumberFormat('zh-CN', { style: 'currency', currency: inv.currency || 'USD' }).format(inv.amount / 100)}
                           </td>
                           <td className='py-3 text-center'>
                             <Badge variant={meta.variant} className='rounded-full'>{meta.label}</Badge>
@@ -125,8 +127,14 @@ export function InvoicesPage() {
                               variant='ghost'
                               size='sm'
                               className='rounded-full'
-                              onClick={() => {
-                                window.open(`/api/v1/user/invoice/download/${inv.id}`, '_blank')
+                              onClick={async () => {
+                                try {
+                                  const response = await apiClient.get(`/api/v1/user/invoice/download/${inv.id}`, { responseType: 'blob' });
+                                  const url = URL.createObjectURL(response.data);
+                                  const link = document.createElement('a');
+                                  link.href = url; link.download = `${inv.invoice_no}.pdf`; link.click();
+                                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                                } catch { toast.error('发票下载失败，请稍后重试'); }
                               }}
                             >
                               <Download className='mr-1 size-4' />

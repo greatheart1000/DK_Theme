@@ -4,6 +4,13 @@ import { AppShell } from '@/components/app-shell';
 import { AuthLayout } from '@/components/auth-layout';
 import { useAuth } from '@/features/auth/auth-context';
 
+const AdminRefundsPage = lazy(() => import('@/pages/admin-refunds-page').then((module) => ({ default: module.AdminRefundsPage })));
+
+function AdminOnly() {
+  const { user } = useAuth();
+  return user?.is_admin ? <AdminRefundsPage /> : <Navigate to='/dashboard' replace />;
+}
+
 const ClientsPage = lazy(() => import('@/pages/clients-page').then((module) => ({ default: module.ClientsPage })));
 const DashboardPage = lazy(() => import('@/pages/dashboard-page').then((module) => ({ default: module.DashboardPage })));
 const InvitePage = lazy(() => import('@/pages/invite-page').then((module) => ({ default: module.InvitePage })));
@@ -51,6 +58,7 @@ export function AppRouter() {
         <Route path='/knowledge' element={<KnowledgePage />} />
         <Route path='/settings' element={<SettingsPage />} />
         <Route path='/invoices' element={<InvoicesPage />} />
+        <Route path='/admin/refunds' element={<AdminOnly />} />
         <Route path='/refunds' element={<RefundsPage />} />
       </Route>
       <Route path='*' element={<Navigate to={token ? '/dashboard' : '/login'} replace />} />

@@ -1,3 +1,4 @@
+import { localDateKey } from '@/lib/local-date'
 import * as React from 'react'
 import { TrendingUp } from 'lucide-react'
 
@@ -25,7 +26,7 @@ type WeeklyTrafficChartItem = {
 }
 
 function getDayKey(date: Date) {
-  return date.toISOString().slice(0, 10)
+  return localDateKey(date)
 }
 
 function getWeekdayLabel(date: Date) {
@@ -45,7 +46,7 @@ function aggregateDailyMap(trafficLogs: TrafficLog[]) {
 
   for (const log of trafficLogs) {
     if (!log.record_at) continue
-    const dayKey = new Date(log.record_at * 1000).toISOString().slice(0, 10)
+    const dayKey = localDateKey(new Date(log.record_at * 1000))
     dailyMap.set(dayKey, (dailyMap.get(dayKey) ?? 0) + log.total)
   }
 

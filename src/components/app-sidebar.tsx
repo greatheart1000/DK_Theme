@@ -183,6 +183,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             { title: "安全中心", url: "/settings", icon: IconShieldLock },
             { title: "账单发票", url: "/invoices", icon: IconFileInvoice },
             { title: "退款记录", url: "/refunds", icon: IconReceiptRefund },
+            ...(user?.is_admin ? [{ title: "退款审批", url: "/admin/refunds", icon: IconReceiptRefund }] : []),
             { title: "帮助文档", url: "/knowledge", icon: IconBook },
             { title: "获取支持", icon: IconLifebuoy, onClick: () => setSupportOpen(true) },
           ]}
