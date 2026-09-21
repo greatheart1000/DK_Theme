@@ -181,8 +181,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             { title: "邀请返利", url: "/invite", icon: IconPercentage },
             { title: "工单支持", url: "/tickets", icon: IconTicket },
             { title: "安全中心", url: "/settings", icon: IconShieldLock },
-            { title: "账单发票", url: "/invoices", icon: IconFileText },
-            { title: "退款记录", url: "/refunds", icon: IconRotate },
+            { title: "账单发票", url: "/invoices", icon: IconFileInvoice },
+            { title: "退款记录", url: "/refunds", icon: IconReceiptRefund },
             { title: "帮助文档", url: "/knowledge", icon: IconBook },
             { title: "获取支持", icon: IconLifebuoy, onClick: () => setSupportOpen(true) },
           ]}

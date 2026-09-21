@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CircleHelp, RotateCcw } from 'lucide-react'
+import { RotateCcw } from "lucide-react"
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
@@ -53,7 +53,7 @@ export function RefundsPage() {
   const [tradeNo, setTradeNo] = useState('')
   const [reason, setReason] = useState('')
 
-  const { data: refunds, isLoading } = useQuery<RefundItem[]>({
+  const { data: refunds, isLoading } = useQuery({
     queryKey: ['refunds'],
     queryFn: getRefunds,
   })
@@ -103,7 +103,7 @@ export function RefundsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {refunds.map((r) => (
+                    {(refunds as RefundItem[]).map((r) => (
                       <tr key={r.id} className='border-b border-slate-100 dark:border-border/40 hover:bg-slate-50/50 dark:hover:bg-background/20'>
                         <td className='py-3 font-mono text-xs text-slate-900'>{r.trade_no}</td>
                         <td className='py-3 text-slate-600'>{r.order?.plan?.name ?? '--'}</td>

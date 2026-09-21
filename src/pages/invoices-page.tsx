@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Download, ReceiptText, SearchIcon } from 'lucide-react'
-import { toast } from 'sonner'
+import { Download, SearchIcon } from 'lucide-react'
+
 import { PageHeader } from '@/components/page-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -23,11 +23,6 @@ type Invoice = {
   pdf_path?: string | null
 }
 
-const statusBadge: Record<number, 'success' | 'secondary' | 'destructive'> = {
-  1: 'success',
-  2: 'destructive',
-  3: 'secondary',
-}
 
 function getStatusMeta(s: number) {
   if (s === 1) return { label: '已支付', variant: 'success' as const }
@@ -37,11 +32,12 @@ function getStatusMeta(s: number) {
 
 export function InvoicesPage() {
   const [search, setSearch] = useState('')
-  const { data: invoices, isLoading, error } = useQuery<Invoice[]>({
+  const { data: invoicesRaw, isLoading, error } = useQuery({
     queryKey: ['invoices'],
     queryFn: getInvoices,
   })
 
+  const invoices = invoicesRaw as Invoice[] | undefined;
   const filtered = useMemo(() => {
     if (!invoices) return []
     if (!search.trim()) return invoices
